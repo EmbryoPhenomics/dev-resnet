@@ -38,7 +38,7 @@ def stem2dplus1d(x):
     x = layers.MaxPooling3D(pool_size=(1,2,2))(x)
     return x
 
-def resnet3d(input_shape=None, include_top=True, input_tensor=None, n_classes=10, **kwargs):
+def dev_resnet(input_shape=None, include_top=True, input_tensor=None, n_classes=10, **kwargs):
     if input_shape is None:
         input_shape = (12, 128, 128, 1)
 
@@ -70,5 +70,5 @@ def resnet3d(input_shape=None, include_top=True, input_tensor=None, n_classes=10
 
 
 if __name__ == '__main__':
-    model = resnet3d((12, 128, 128, 1))
+    model = dev_resnet((12, 128, 128, 1))
     model.summary()
