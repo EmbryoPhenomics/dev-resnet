@@ -21,9 +21,9 @@ events = ['blastula', 'gastrula', 'trocophore', 'veliger', 'eye', 'heart', 'craw
 # Only requires 12 frames but at an increment of 10
 # i.e. 120 frames, but every 10th
 model = resnet3d((12,128,128,1), n_classes=len(events))
-model.load_weights('./ResNet_3D.h5')
+model.load_weights('./Dev-Resnet_lymnaea.h5')
 
-# Lymnaea video and bbox
+# Lymnaea video and bbox for this video
 video = vuba.Video('./lymnaea_A_A3.avi')
 x1,x2,y1,y2 = (230, 520, 490, 780)
 

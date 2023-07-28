@@ -92,7 +92,7 @@ for t,temp in dev_events.groupby('temp'):
 			args = list(range(0, len(video), 600))
 			list(tqdm(pool.imap(export, args), total=len(args)))
 
-		# Iterature through each timepoint and assign events to a given 
+		# Iterate through each timepoint and assign events to a given 
 		# video files. Event labels only change when a subsequent event occurs
 		current = event_times[0]
 		for frame_index in tqdm(range(0, len(video), 600)):
