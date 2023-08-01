@@ -38,7 +38,32 @@ def stem2dplus1d(x):
     x = layers.MaxPooling3D(pool_size=(1,2,2))(x)
     return x
 
-def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=10, **kwargs):
+def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=10):
+    '''
+    Create an instance of Dev-ResNet
+
+    Initiate a keras model instance of Dev-ResNet - a 3D CNN for detecting developmental events
+    in developing animals.
+
+    Parameters
+    ----------
+    input_shape : tuple
+        Desired input shape of model (length, width, height, channels). Note if you use the weights 
+        for Lymnaea stagnalis you will need an input shape of (12,128,128,1).
+    include_top : bool
+        Whether to include a final classification layer.
+    input_tensor : tf.Tensor
+        An input tensor to override the creation of the input tensor within the function.
+    n_classes : int
+        Number of classes for classification if include_top=True.
+    
+    Returns
+    -------
+    model : keras.Model
+        Keras model instance
+        
+    '''
+
     if input_shape is None:
         input_shape = (12, 128, 128, 1)
 
