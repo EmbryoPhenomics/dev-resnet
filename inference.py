@@ -14,7 +14,7 @@ def lowess_smooth(x, frac=0.025):
     x = np.asarray(x)
     return lowess(x, [i for i in range(len(x))], it=0, frac=frac)[:,1]
 
-events = ['pre-gastrula', 'gastrula', 'trocophore', 'veliger', 'eye', 'heart', 'crawling', 'radula', 'hatch', 'dead']
+events = ['pre_gastrula', 'gastrula', 'trocophore', 'veliger', 'eye', 'heart', 'crawling', 'radula', 'hatch', 'dead']
 
 # Initiate 3D model
 # Only requires 12 frames but at an increment of 10

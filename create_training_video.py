@@ -28,7 +28,7 @@ boxes = pd.read_csv('/run/user/1000/gvfs/smb-share:server=truenas.local,share=bu
 dev_events = pd.read_csv('/path/to/annotations.csv')
 
 # The developmental events to be used for annotating training data
-events = ['pre-gastrula', 'gastrula', 'trocophore', 'veliger', 'eye', 'heart', 'crawling', 'radula', 'hatch', 'dead']
+events = ['pre_gastrula', 'gastrula', 'trocophore', 'veliger', 'eye', 'heart', 'crawling', 'radula', 'hatch', 'dead']
 
 # Number of cores for parallel processing
 cores = 10
