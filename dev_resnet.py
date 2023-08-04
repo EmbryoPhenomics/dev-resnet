@@ -38,7 +38,12 @@ def stem2dplus1d(x):
     x = layers.MaxPooling3D(pool_size=(1,2,2))(x)
     return x
 
-def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=10):
+
+weights = {
+    'lymnaea': 'https://github.com/EmbryoPhenomics/dev-resnet/releases/download/v0.1/Dev-Resnet_lymnaea.h5'
+}
+
+def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=10, pretrained_weights=False, species='lymnaea'):
     '''
     Create an instance of Dev-ResNet
 
@@ -56,7 +61,11 @@ def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=1
         An input tensor to override the creation of the input tensor within the function.
     n_classes : int
         Number of classes for classification if include_top=True.
-    
+    pretrained_weights : bool
+        Whether to use pre-trained weights when constructing the model.
+    species : str
+        Species to specify for training weights.
+
     Returns
     -------
     model : keras.Model
@@ -91,7 +100,14 @@ def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=1
     outputs = x
     inputs = utils.layer_utils.get_source_inputs(input_tensor)[0]
 
-    return keras.Model(inputs=inputs, outputs=outputs)  
+    model = keras.Model(inputs=inputs, outputs=outputs)
+
+    if pretrained_weights:
+        url = weights[species]
+        pretrained_weights = keras.utils.get_file(origin=url)
+        model.load_weights(pretrained_weights)
+
+    return model  
 
 
 if __name__ == '__main__':
