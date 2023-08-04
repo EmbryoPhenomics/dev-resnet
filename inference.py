@@ -19,10 +19,10 @@ events = ['pre_gastrula', 'gastrula', 'trocophore', 'veliger', 'eye', 'heart', '
 # Initiate 3D model
 # Only requires 12 frames but at an increment of 10
 # i.e. 120 frames, but every 10th
-model = DevResNet((12,128,128,1), n_classes=len(events))
-model.load_weights('./Dev-Resnet_lymnaea.h5')
+model = DevResNet((12,128,128,1), n_classes=len(events), pretrained_weights=True)
 
 # Lymnaea video and bbox for this video
+# Downloading this example video will take a while as it is 4Gb in size.
 file = wget.download('https://zenodo.org/record/8214689/files/example_video.avi')
 video = vuba.Video(file)
 x1,x2,y1,y2 = (230, 520, 490, 780)

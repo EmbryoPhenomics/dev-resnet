@@ -111,5 +111,5 @@ def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=1
 
 
 if __name__ == '__main__':
-    model = DevResNet((12, 128, 128, 1))
+    model = DevResNet((12, 128, 128, 1), n_classes=10, pretrained_weights=True)
     model.summary()
