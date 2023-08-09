@@ -10,3 +10,4 @@ This is an example showcase of Dev-ResNet and it's capabilities for detecting de
 
 ![Alt Text](https://github.com/EmbryoPhenomics/dev-resnet/blob/main/assets/inference.gif)
 
+Note to achieve these results, Dev-ResNet was trained on the following dataset: https://zenodo.org/record/8214975.
