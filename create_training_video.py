@@ -19,16 +19,13 @@ out_dir = '/path/to/training_video/' # Folder where you would like training vide
 
 # Because our timelapse videos were not filtered to just the eggs, we add in here our bounding box measurements 
 # for each embryo for limiting to just the egg for training.
-boxes = pd.read_csv('/run/user/1000/gvfs/smb-share:server=truenas.local,share=butterfly_1/ziad_and_daria/experimental_data_backup/lymnaea/lymnaea_backup_mjpg/egg_boxes_constant_treatments.csv')
+boxes = pd.read_csv('/path/to/egg_boxes.csv')
 
 # Path to manual annotations of developmental events for creating training data
 # Note this is in the format of | Temperature | Replicate | Event | Time |
 # If you have a different structure for your annotations you will need to adjust the parsing of 
 # this file below
 dev_events = pd.read_csv('/path/to/annotations.csv')
-
-# The developmental events to be used for annotating training data
-events = ['pre_gastrula', 'gastrula', 'trocophore', 'veliger', 'eye', 'heart', 'crawling', 'radula', 'hatch', 'dead']
 
 # Number of cores for parallel processing
 cores = 10
@@ -55,9 +52,9 @@ for t,temp in dev_events.groupby('temp'):
 		event_times = np.asarray(list(replicate.timepoint))
 
 		# Add in a descriptor for the developmental period prior
-		# to the first event, in this case Blastula
+		# to the first event, in this case we use Pre-Gastrula
 		event_times = np.asarray([0] + list(replicate.timepoint))
-		events_rep = ['blastula'] + list(replicate.event)
+		events_rep = ['pre_gastrula'] + list(replicate.event)
 
 		# Main function for exporting hourly video files 
 		# args is simply the frame index of a given timepoint to export
@@ -66,6 +63,7 @@ for t,temp in dev_events.groupby('temp'):
 			frame_index = args
 			timepoint = round(frame_index / 600)
 
+			# To check if video already exists
 			out_file = f'{out_dir}/{t}C_{r}_{timepoint}.avi'
 			out_video = vuba.Video(f'{out_dir}/{t}C_{r}_{timepoint}.avi')
 			out_len = len(out_video)
@@ -77,11 +75,16 @@ for t,temp in dev_events.groupby('temp'):
 				at_box = boxes[(boxes.temp == f'{t}C') & (boxes.replicate == r) & (boxes.timepoint == timepoint+1)]
 				x1,y1,x2,y2 = list(at_box.x1)[0],list(at_box.y1)[0],list(at_box.x2)[0],list(at_box.y2)[0]
 
-				video = vuba.Video(f'{source_dir}/{t}C/{r}.avi')
-				writer = vuba.Writer(out_file, video, resolution=(x2-x1, y2-y1), codec='FFV1')
+				video = vuba.Video(f'{source_dir}/{t}C/{r}.avi') # Video instance for reading in training video frames
+				writer = vuba.Writer(out_file, video, resolution=(x2-x1, y2-y1), codec='FFV1') # Lossless output of training video
+
+				# Read in the first 128 frames at the given frame index
 				for frame in video.read(frame_index, frame_index+128, grayscale=False):
+					# We resize frames here for our bounding box filtering, omit if you do not have bounding boxes.
 					frame = cv2.resize(frame, (512, 512))
 					frame = frame[y1:y2, x1:x2, ...]
+
+					# Export frame
 					writer.write(frame)
 
 				writer.close()
@@ -111,6 +114,6 @@ for t,temp in dev_events.groupby('temp'):
 			annotations['single_event'].append(events_rep[event_times.tolist().index(current)])
 
 		video.close()
-		
+
 annotations_df = pd.DataFrame(annotations)
 annotations_df.to_csv('./annotations_original_new.csv')
