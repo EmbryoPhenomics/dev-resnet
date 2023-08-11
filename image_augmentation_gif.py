@@ -16,6 +16,12 @@ import imageio
 import random
 import time
 
+# Parameters -----------------------
+limit = 3000 # For removing class imbalances, all individual classes will be augmented until this limit is reached
+ann = pd.read_csv('./annotations_train.csv') # Annotation training dataset produced from 'split_dataset.py'
+im_dir = './video' # Output folder for exporting augmenting GIF files
+# ----------------------------------
+
 ia.seed(1)
 
 seq = iaa.Sequential([
@@ -28,11 +34,6 @@ seq = iaa.Sequential([
 	)),
 	iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 0.5)))
 ], random_order=True)
-
-# Parameters
-limit = 3000 # For removing class imbalances, all individual classes will be augmented until this limit is reached
-ann = pd.read_csv('./annotations_train.csv')
-im_dir = './video'
 
 def process(arg):
 	i, fn = arg
