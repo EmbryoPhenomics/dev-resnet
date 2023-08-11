@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Parameters ---------------
-annotations_file = './annotations_gif.csv'
+annotations_file = './annotations_gif.csv' # Annotation file produced after running 'convert_avi_to_gif.py'
 test_samples = 0.1 # i.e. 10% for testing
 val_samples = 0.1 # i.e. 10 % for validation
 # --------------------------
