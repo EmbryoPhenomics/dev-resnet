@@ -27,7 +27,7 @@ file = wget.download('https://zenodo.org/record/8214689/files/example_video.avi'
 video = vuba.Video(file)
 x1,x2,y1,y2 = (230, 520, 490, 780)
 
-# Read, filter and resize video framesYour location
+# Read, filter and resize video frames
 frames = []
 for ind in tqdm(range(0, len(video), 600)):
   frame = video.read(start=ind, stop=ind+120, step=10, grayscale=True, low_memory=False).ndarray
