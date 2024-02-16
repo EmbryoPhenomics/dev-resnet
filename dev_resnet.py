@@ -39,11 +39,7 @@ def stem2dplus1d(x):
     return x
 
 
-weights = {
-    'lymnaea': 'https://github.com/EmbryoPhenomics/dev-resnet/releases/download/v0.1/Dev-Resnet_lymnaea.h5'
-}
-
-def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=10, pretrained_weights=False, species='lymnaea'):
+def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=10, pretrained_weights=None, pretrained_weights_url=None):
     '''
     Create an instance of Dev-ResNet
 
@@ -61,10 +57,10 @@ def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=1
         An input tensor to override the creation of the input tensor within the function.
     n_classes : int
         Number of classes for classification if include_top=True.
-    pretrained_weights : bool
-        Whether to use pre-trained weights when constructing the model.
-    species : str
-        Species to specify for training weights.
+    pretrained_weights : str
+        File path to pre-trained weights (must be local on your system).
+    pretrained_weights_url : str
+        URL path to pre-trained weights.
 
     Returns
     -------
@@ -102,14 +98,15 @@ def DevResNet(input_shape=None, include_top=True, input_tensor=None, n_classes=1
 
     model = keras.Model(inputs=inputs, outputs=outputs)
 
-    if pretrained_weights:
-        url = weights[species]
-        pretrained_weights = keras.utils.get_file(origin=url)
+    if pretrained_weights or pretrained_weights_url:
+        if pretrained_weights_url:
+            pretrained_weights = keras.utils.get_file(origin=pretrained_weights_url)
+
         model.load_weights(pretrained_weights)
 
     return model  
 
 
 if __name__ == '__main__':
-    model = DevResNet((12, 128, 128, 1), n_classes=10, pretrained_weights=True)
+    model = DevResNet((12, 128, 128, 1), n_classes=10)
     model.summary()
