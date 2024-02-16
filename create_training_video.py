@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 import os
 import multiprocessing as mp
+import imageio
 
 # Parameters ------------------------------------
 # Note here we have structured this script for our experimental format, where timelapse videos of embryos are split into 
@@ -14,28 +15,50 @@ import multiprocessing as mp
 
 # All videos are in AVI format, encoded with MJPG, though because this script uses OpenCV there should not be issues
 # with other formats
-source_dir = '/path/to/video/' # Directory where folders of timelapse video are located
-out_dir = '/path/to/training_video/' # Folder where you would like training video to be exported
+source_dir = '/run/media/z/fast1/dev-resnet_video' # Directory where folders of timelapse video are located
+out_dir = '/run/media/z/fast1/dev-resnet_video/timepoint_videos' # Folder where you would like training video to be exported
+source_video_file_extension = '.avi' # Change to the file format of your videos, e.g. .mp4 or .avi
 
 # Because our timelapse videos were not filtered to just the eggs, we add in here our bounding box measurements 
 # for each embryo for limiting to just the egg for training.
-boxes = pd.read_csv('/path/to/egg_boxes.csv')
+boxes = pd.read_csv('/run/media/z/fast1/dev-resnet_video/egg_boxes_constant_treatments.csv')
 
 # Path to manual annotations of developmental events for creating training data
 # Note this is in the format of | Temperature | Replicate | Event | Time |
 # If you have a different structure for your annotations you will need to adjust the parsing of 
 # this file below
-dev_events = pd.read_csv('/path/to/annotations.csv')
+dev_events = pd.read_csv('./developmental_events_new.csv')
+treatment_column_name = 'temp' # Change this to the treatment column name you specified  
+
+# The developmental events you have recorded in the CSV file above, in chronological order
+events = ['pre_gastrula', 'gastrula', 'trocophore', 'veliger', 'eye', 'heart', 'crawling', 'radula', 'hatch', 'dead']
 
 # Number of cores for parallel processing
-cores = 10
+cores = 14
+
+# Temporal stride for each timepoint video
+step = 3
+
+# Timepoint length (frames)
+timepoint_len_export = 128
+
+# The name of the output CSV containing annotations
+output_csv = f'./annotations_new_{step}s.csv'
 # -----------------------------------------------
+
+# # Check for existing augmented files
+# print('Removing existing files...')
+# aug_files = glob.glob(f'{out_dir}/*_5s.gif')
+# for f in tqdm(aug_files):
+#     os.remove(f)
 
 # Create output annotations CSV file, where each hourly timepoint video file has a given event
 annotations = dict(temp=[], replicate=[], source_file=[], out_file=[], single_event=[])
+for e in events:
+	annotations[e] = []
 
 # Because our experiment includes treatments at different temperatures, we first iterate across this axis
-for t,temp in dev_events.groupby('temp'):
+for t,temp in dev_events.groupby(treatment_column_name):
 
 	# Then we iterate across each embryo replicate per treatment (that has been annotated)
 	for r,replicate in temp.groupby('replicate'):
@@ -46,7 +69,7 @@ for t,temp in dev_events.groupby('temp'):
 			t = int(t)
 
 		# Initiate video instance
-		video = vuba.Video(f'{source_dir}/{t}C/{r}.avi')
+		video = vuba.Video(f'{source_dir}/{t}C/{r}{source_video_file_extension}')
 
 		# Create array of manually identified event times
 		event_times = np.asarray(list(replicate.timepoint))
@@ -64,31 +87,30 @@ for t,temp in dev_events.groupby('temp'):
 			timepoint = round(frame_index / 600)
 
 			# To check if video already exists
-			out_file = f'{out_dir}/{t}C_{r}_{timepoint}.avi'
-			out_video = vuba.Video(f'{out_dir}/{t}C_{r}_{timepoint}.avi')
+			out_file = f'{out_dir}/{t}C_{r}_{timepoint}hpf_{step}s.gif'
+			out_video = vuba.Video(out_file)
 			out_len = len(out_video)
 			out_video.close()
 
-			if os.path.exists(f'{out_dir}/{t}C_{r}_{timepoint}.avi') and out_len >= 128:
+			# print(os.path.exists(out_file), out_len, (600 / step))
+			if os.path.exists(out_file) and out_len >= int(timepoint_len_export / step):
 				return
 			else:
 				at_box = boxes[(boxes.temp == f'{t}C') & (boxes.replicate == r) & (boxes.timepoint == timepoint+1)]
 				x1,y1,x2,y2 = list(at_box.x1)[0],list(at_box.y1)[0],list(at_box.x2)[0],list(at_box.y2)[0]
 
-				video = vuba.Video(f'{source_dir}/{t}C/{r}.avi') # Video instance for reading in training video frames
-				writer = vuba.Writer(out_file, video, resolution=(x2-x1, y2-y1), codec='FFV1') # Lossless output of training video
+				video = vuba.Video(f'{source_dir}/{t}C/{r}{source_video_file_extension}') # Video instance for reading in training video frames
 
-				# Read in the first 128 frames at the given frame index
-				for frame in video.read(frame_index, frame_index+128, grayscale=False):
+				export_frames = []
+				for frame in video.read(frame_index, frame_index+timepoint_len_export, step=step, grayscale=False):
 					# We resize frames here for our bounding box filtering, omit if you do not have bounding boxes.
 					frame = cv2.resize(frame, (512, 512))
 					frame = frame[y1:y2, x1:x2, ...]
 
-					# Export frame
-					writer.write(frame)
+					export_frames.append(frame)
 
-				writer.close()
 				video.close()
+				imageio.mimsave(out_file, export_frames)
 
 		# Perform export of video files across multiple cores.
 		with mp.Pool(processes=cores) as pool:
@@ -98,6 +120,7 @@ for t,temp in dev_events.groupby('temp'):
 		# Iterate through each timepoint and assign events to a given 
 		# video files. Event labels only change when a subsequent event occurs
 		current = event_times[0]
+		dont_continue = {e: True for e in events}
 		for frame_index in tqdm(range(0, len(video), 600)):
 			timepoint = round(frame_index / 600)
 			diff = np.abs(timepoint - event_times)
@@ -106,14 +129,26 @@ for t,temp in dev_events.groupby('temp'):
 				current = event_times[np.argmin(diff)]	
 
 			at = np.argmin(np.abs(timepoint - event_times))
-			out_file = f'{out_dir}/{t}C_{r}_{timepoint}.avi'
+			out_file = f'{out_dir}/{t}C_{r}_{timepoint}hpf_{step}s.gif'
 			annotations['temp'].append(t)
 			annotations['replicate'].append(r)
-			annotations['source_file'].append(f'{source_dir}/{t}C/{r}.avi')
+			annotations['source_file'].append(f'{source_dir}/{t}/{r}.avi')
 			annotations['out_file'].append(out_file)
 			annotations['single_event'].append(events_rep[event_times.tolist().index(current)])
+
+			for e in events:
+				if e == events_rep[event_times.tolist().index(current)]:
+					annotations[e].append(1)
+
+					if e != 'pre_gastrula':
+						dont_continue[e] = False
+				else:
+					if dont_continue[e]:
+						annotations[e].append(0)
+					else:
+						annotations[e].append(1)
 
 		video.close()
 
 annotations_df = pd.DataFrame(annotations)
-annotations_df.to_csv('./annotations_original_new.csv')
+annotations_df.to_csv(output_csv)
