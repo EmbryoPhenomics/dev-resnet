@@ -113,13 +113,13 @@ An annotation CSV file will be generated from this script which will have the fo
 
 After running the `create_training_video.py` script in the preceding step, a CSV containing annotations corresponding to your training video will be generated. In this step, we will be splitting this dataset into training, validation and testing datasets for subsequent steps. To do this, please run the `split_dataset.py` script with your own parameters.
 
-### 6. Image augmentation (`image_augmentation.gif`)
+### 6. Image augmentation (`image_augmentation_gif.py`)
 
 In this step we will perform image augmentation on only the training video, to introduce variation in the training dataset and reduce the chances of overfitting in the training process. 
 
 The augmentation script that we have included performs selective data augmentation to remove class imbalances in the training dataset, i.e. if you have a disproportionate number of samples allocated to one developmental event classification.
 
-Simply specify the parameters in the script `image_augmentation.py` according to your system. Note that the parameter `limit` should be specified as equal or greater than the class with the most samples. You can check the class imbalances present within your training data by specifying the `check_class_imbalances` parameter as `True`, and then specifying it as `False` once you have finished checking.
+Simply specify the parameters in the script `image_augmentation_gif.py` according to your system. Note that the parameter `limit` should be specified as equal or greater than the class with the most samples. You can check the class imbalances present within your training data by specifying the `check_class_imbalances` parameter as `True`, and then specifying it as `False` once you have finished checking.
 
 ### 7. Training and evaluation (`train.ipynb`)
 
