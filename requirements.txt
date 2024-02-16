@@ -1,0 +1,15 @@
+imageio==2.31.1
+imgaug==0.4.0
+keras==2.12.0
+matplotlib==3.7.1
+numpy==1.23.5
+opencv_contrib_python==4.8.1.78
+opencv_python==4.8.0.76
+pandas==2.0.3
+seaborn==0.11.2
+statsmodels==0.14.0
+tensorflow==2.12.1
+tqdm==4.65.0
+ujson==5.8.0
+vuba==0.2.9.2
+wget==3.2
