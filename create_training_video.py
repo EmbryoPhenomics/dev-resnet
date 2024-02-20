@@ -22,6 +22,7 @@ source_video_file_extension = '.avi' # Change to the file format of your videos,
 # Because our timelapse videos were not filtered to just the eggs, we add in here our bounding box measurements 
 # for each embryo for limiting to just the egg for training.
 boxes = pd.read_csv('/run/media/z/fast1/dev-resnet_video/egg_boxes_constant_treatments.csv')
+resize_before_filter = dict(check=True, shape=(512,512)) # Whether to resize before filtering to just region of interest
 
 # Path to manual annotations of developmental events for creating training data
 # Note this is in the format of | Temperature | Replicate | Event | Time |
@@ -40,17 +41,12 @@ cores = 14
 step = 3
 
 # Timepoint length (frames)
-timepoint_len_export = 128
+timepoint_len = 600 # Number of video frames associated with each timepoint, 30sec x 20fps = 600 frames.
+timepoint_len_export = 128 # Number of frames to export in output GIFs
 
 # The name of the output CSV containing annotations
 output_csv = f'./annotations_new_{step}s.csv'
 # -----------------------------------------------
-
-# # Check for existing augmented files
-# print('Removing existing files...')
-# aug_files = glob.glob(f'{out_dir}/*_5s.gif')
-# for f in tqdm(aug_files):
-#     os.remove(f)
 
 # Create output annotations CSV file, where each hourly timepoint video file has a given event
 annotations = dict(temp=[], replicate=[], source_file=[], out_file=[], single_event=[])
@@ -84,7 +80,7 @@ for t,temp in dev_events.groupby(treatment_column_name):
 		# from the timelapse videos
 		def export(args):
 			frame_index = args
-			timepoint = round(frame_index / 600)
+			timepoint = round(frame_index / timepoint_len)
 
 			# To check if video already exists
 			out_file = f'{out_dir}/{t}C_{r}_{timepoint}hpf_{step}s.gif'
@@ -92,7 +88,6 @@ for t,temp in dev_events.groupby(treatment_column_name):
 			out_len = len(out_video)
 			out_video.close()
 
-			# print(os.path.exists(out_file), out_len, (600 / step))
 			if os.path.exists(out_file) and out_len >= int(timepoint_len_export / step):
 				return
 			else:
@@ -103,8 +98,9 @@ for t,temp in dev_events.groupby(treatment_column_name):
 
 				export_frames = []
 				for frame in video.read(frame_index, frame_index+timepoint_len_export, step=step, grayscale=False):
-					# We resize frames here for our bounding box filtering, omit if you do not have bounding boxes.
-					frame = cv2.resize(frame, (512, 512))
+					if resize_before_filter['check']:
+						frame = cv2.resize(frame, resize_before_filter['shape'])
+
 					frame = frame[y1:y2, x1:x2, ...]
 
 					export_frames.append(frame)
@@ -114,15 +110,15 @@ for t,temp in dev_events.groupby(treatment_column_name):
 
 		# Perform export of video files across multiple cores.
 		with mp.Pool(processes=cores) as pool:
-			args = list(range(0, len(video), 600))
+			args = list(range(0, len(video), timepoint_len))
 			list(tqdm(pool.imap(export, args), total=len(args)))
 
 		# Iterate through each timepoint and assign events to a given 
 		# video files. Event labels only change when a subsequent event occurs
 		current = event_times[0]
 		dont_continue = {e: True for e in events}
-		for frame_index in tqdm(range(0, len(video), 600)):
-			timepoint = round(frame_index / 600)
+		for frame_index in tqdm(range(0, len(video), timepoint_len)):
+			timepoint = round(frame_index / timepoint_len)
 			diff = np.abs(timepoint - event_times)
 
 			if 0 in diff:
