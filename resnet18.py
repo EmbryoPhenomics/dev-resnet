@@ -1,7 +1,7 @@
 from tensorflow import keras
 from tensorflow.keras import layers
 import tensorflow as tf
-from keras import utils
+from tensorflow.python.keras import utils
 
 def add_default_block(x, kernel_filters):
     s = layers.Conv2D(kernel_filters, (1,1), padding='same')(x)
